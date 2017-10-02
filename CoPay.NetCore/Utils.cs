@@ -41,31 +41,15 @@ namespace CoPay
         }
 
         public static String signMessage(String text, Key key) {
-            //var priv = new PrivateKey(privKey);
-            // BitcoinSecret priv = new BitcoinSecret(key, Network.Main);
-            
-            //var hash = Utils.hashMessage(text);
-            var hash = Utils.hashMessage(text);
-            var h = new uint256(hash);
-            var sig = key.Sign(h);
-            var arr = sig.ToDER();
-            return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(arr);
-            //return crypto.ECDSA.sign(hash, priv, 'little').toString();
-            // var base64 = priv.PrivateKey.SignMessage(hash);
-            // Byte[] base64Bytes = NBitcoin.DataEncoders.Encoders.Base64.DecodeData(base64);
-
-            // return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(base64Bytes);
+            var hashString = Utils.hashMessage(text);
+            var hash = new uint256(hashString);
+            return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(key.Sign(hash).ToDER());
         }
 
         public static string signRequest(String method, String url, object args, string key)
         {
-            //var sig = Utils.signMessage('hola', '09458c090a69a38368975fb68115df2f4b0ab7d1bc463fc60c67aa1730641d6c');
-            //should.exist(sig);
-            //sig.should.equal('3045022100f2e3369dd4813d4d42aa2ed74b5cf8e364a8fa13d43ec541e4bc29525e0564c302205b37a7d1ca73f684f91256806cdad4b320b4ed3000bee2e388bcec106e0280e0');
-
             String json = JsonConvert.SerializeObject(args);
             String message = String.Format("{0}|{1}|{2}", method.ToLower(), url, json);
-            //var message = [method.toLowerCase(), url, JSON.stringify(args)].join('|');
 
             NBitcoin.BitcoinSecret s = new BitcoinSecret(key);
             return s.PrivateKey.SignMessage(message);
@@ -73,22 +57,8 @@ namespace CoPay
 
         private static byte[] hashMessage(String test)
         {
-            //  $.checkArgument(text);
-            //var buf = new Buffer(text);
-            //var ret = crypto.Hash.sha256sha256(buf);
-            //ret = new Bitcore.encoding.BufferReader(ret).readReverse();
-            //return ret;
-
-            //Assume ascii?
             Byte[] data = NBitcoin.DataEncoders.Encoders.ASCII.DecodeData(test);
-            
-            Byte[] doubleHash = NBitcoin.Crypto.Hashes.SHA256(NBitcoin.Crypto.Hashes.SHA256(data));
-
-            //Reverse bytes
-            // Array.Reverse(doubleHash);
-
-            //Return as double sha 256
-            return doubleHash;
+            return NBitcoin.Crypto.Hashes.SHA256(NBitcoin.Crypto.Hashes.SHA256(data));
         }
 
         public static string Encrypt(string clearText, string key)

@@ -11,14 +11,20 @@ namespace CoPay.NetCore
         }
 
         static void Call() {
-            var privkey = "L4vrWtn7zFnboSucZ84XGHzt13HEWMoD48HgXZ49u4JZoA6A9dMh";
-            var pubkey = "0254fea7b08745c15103765a5c299b354ac6fbd3fa6a33c5ee84b6fa0fd108ab4e";
-            var xPubKey = "xpub661MyMwAqRbcGUAtmn55urDkFGxWFsFf6tJphcdLFvYTYyd45qS4TrqC69eswNyE7Zf3tCtQn29vhy3TjAv75GoigSyNVS5tjcnckt2nczf";
-            var xPrivKey = "xprv9s21ZrQH143K3z6RfkY5YiH1hF81rQXojfPDuEDihb1UgBHuYJ7ov4WiEuizAcoJh4gHwhusHJwukqG8zBGwETh7RZPcGGmgbRUiE5t4SWC";
-            var copayerName = "gus2";
-            var walletId = Guid.Parse("f44cb0f0-4913-45f9-923a-b23715d0c8b0");
+            var walletId = Guid.Parse("24bdfed2-b255-484b-a0f7-3c598af9ea72");
+            var walletPrivateKey = "L4vrWtn7zFnboSucZ84XGHzt13HEWMoD48HgXZ49u4JZoA6A9dMh";
+            var copayerName = "gus3";
+            var newCopayerKey = new NBitcoin.ExtKey();
+            // var pubkey = "0254fea7b08745c15103765a5c299b354ac6fbd3fa6a33c5ee84b6fa0fd108ab4e";
+            // var xPubKey = "xpub661MyMwAqRbcGUAtmn55urDkFGxWFsFf6tJphcdLFvYTYyd45qS4TrqC69eswNyE7Zf3tCtQn29vhy3TjAv75GoigSyNVS5tjcnckt2nczf";
+            // var xPrivKey = "xprv9s21ZrQH143K3z6RfkY5YiH1hF81rQXojfPDuEDihb1UgBHuYJ7ov4WiEuizAcoJh4gHwhusHJwukqG8zBGwETh7RZPcGGmgbRUiE5t4SWC";
             var client = new CoPay.Client();
-            var task = client.doJoinWallet(walletId, privkey, "xpub69rW9xQLPBr9jJYH6oGQqxbmfEnyeHkSKpm4VrPwbqdBQAXjuG9Zx6DcVf9bbaDVovCq8UbfbGmb2e2jWeLG8DtyV7jbL8UroPAhKxY6aii", copayerName);
+            var task = client.doJoinWallet(
+                walletId,
+                walletPrivateKey,
+                newCopayerKey.Neuter().ToString(NBitcoin.Network.Main),
+                copayerName
+            );
 
             task.Wait();
 
@@ -29,9 +35,9 @@ namespace CoPay.NetCore
             var k = new NBitcoin.ExtKey();
             Console.Out.WriteLine("Ext priv");
             Console.Out.WriteLine(k.ToString(NBitcoin.Network.Main));
-
-            // Console.Out.WriteLine("Ext pub");
-            // Console.Out.WriteLine(k);
+            
+            Console.Out.WriteLine("Ext pub");
+            Console.Out.WriteLine(k.Neuter());
 
             var pk = k.PrivateKey;
             Console.Out.WriteLine("PrivK");
