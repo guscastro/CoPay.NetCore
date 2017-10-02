@@ -42,16 +42,19 @@ namespace CoPay
 
         public static String signMessage(String text, Key key) {
             //var priv = new PrivateKey(privKey);
-            BitcoinSecret priv = new BitcoinSecret(key, Network.Main);
+            // BitcoinSecret priv = new BitcoinSecret(key, Network.Main);
             
             //var hash = Utils.hashMessage(text);
-            String hash = Utils.hashMessage(text);
-
+            var hash = Utils.hashMessage(text);
+            var h = new uint256(hash);
+            var sig = key.Sign(h);
+            var arr = sig.ToDER();
+            return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(arr);
             //return crypto.ECDSA.sign(hash, priv, 'little').toString();
-            String base64 = priv.PrivateKey.SignMessage(hash);
-            Byte[] base64Bytes = NBitcoin.DataEncoders.Encoders.Base64.DecodeData(base64);
+            // var base64 = priv.PrivateKey.SignMessage(hash);
+            // Byte[] base64Bytes = NBitcoin.DataEncoders.Encoders.Base64.DecodeData(base64);
 
-            return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(base64Bytes);
+            // return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(base64Bytes);
         }
 
         public static string signRequest(String method, String url, object args, string key)
@@ -68,7 +71,7 @@ namespace CoPay
             return s.PrivateKey.SignMessage(message);
         }
 
-        public static String hashMessage(String test)
+        private static byte[] hashMessage(String test)
         {
             //  $.checkArgument(text);
             //var buf = new Buffer(text);
@@ -78,13 +81,14 @@ namespace CoPay
 
             //Assume ascii?
             Byte[] data = NBitcoin.DataEncoders.Encoders.ASCII.DecodeData(test);
+            
             Byte[] doubleHash = NBitcoin.Crypto.Hashes.SHA256(NBitcoin.Crypto.Hashes.SHA256(data));
 
             //Reverse bytes
-            Array.Reverse(doubleHash);
+            // Array.Reverse(doubleHash);
 
             //Return as double sha 256
-            return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(doubleHash);
+            return doubleHash;
         }
 
         public static string Encrypt(string clearText, string key)

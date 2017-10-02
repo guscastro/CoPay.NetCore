@@ -17,7 +17,7 @@ namespace CoPay.NetCore
             var xPrivKey = "xprv9s21ZrQH143K3z6RfkY5YiH1hF81rQXojfPDuEDihb1UgBHuYJ7ov4WiEuizAcoJh4gHwhusHJwukqG8zBGwETh7RZPcGGmgbRUiE5t4SWC";
             var copayerName = "gus2";
             var walletId = Guid.Parse("f44cb0f0-4913-45f9-923a-b23715d0c8b0");
-            var client = new Client();
+            var client = new CoPay.Client();
             var task = client.doJoinWallet(walletId, privkey, "xpub69rW9xQLPBr9jJYH6oGQqxbmfEnyeHkSKpm4VrPwbqdBQAXjuG9Zx6DcVf9bbaDVovCq8UbfbGmb2e2jWeLG8DtyV7jbL8UroPAhKxY6aii", copayerName);
 
             task.Wait();

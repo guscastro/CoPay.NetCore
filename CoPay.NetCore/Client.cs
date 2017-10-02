@@ -79,8 +79,7 @@ namespace CoPay
 
             var hash = Utils.getCopayerHash(copayerName, xPubKey, reqPubKey);
 
-            // var copayerSignature = Utils.signMessage(hash, wkey);
-            var copayerSignature = "3045022100c489117f1e2132dd827a0bc98af7f5a429ef57dce2dcb3cd6d362c42a9cd13ed0220124d2e7c103ee8179ad09e025e8f0cdd7954b28593ad6df8a4620952e7d31e9f";
+            var copayerSignature = Utils.signMessage(hash, wkey);
 
             var request = new JoinWallet.Request {
                 walletId = walletId.ToString(),
