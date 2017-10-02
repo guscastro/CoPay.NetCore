@@ -1,3 +1,4 @@
+using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using System;
@@ -11,6 +12,8 @@ namespace CoPay
 {
     public class Client
     {
+        // TODO get from settings or something?
+        private readonly Network network = Network.Main;
         private readonly string BWS_INSTANCE_URL = "https://bws.bitpay.com/bws/api";
 
         public Client(String baseUrl = "https://bws.bitpay.com/bws/api")
@@ -64,14 +67,18 @@ namespace CoPay
             }
         }
 
-        public async Task<JoinWallet.Response> doJoinWallet(Guid walletId, String walletPrivKey, String xPubKey, String copayerName)
-        {
-            string reqPubKey = "03d222074bb076cf3b0b47e8a562d106cc833e39d95f1479600faeaed702613e93";
-            var reqPrivKey = "L5iiNZ4PxhbLmiyHqtJHiYZzFYN7oW7ebmZmiYeoS1ifjQcGU4XT";
+        public async Task<JoinWallet.Response> doJoinWallet(
+            Guid walletId,
+            String walletPrivKey,
+            String copayerXPrivKey,
+            String copayerName
+        ) {
+            var copayerKey = ExtKey.Parse(copayerXPrivKey);
+            var derivedKey = copayerKey.Derive(Constants.REQUEST_PATH);
 
-            var key = NBitcoin.Key.Parse(reqPrivKey, NBitcoin.Network.Main);
-
-            var wkey = NBitcoin.Key.Parse(walletPrivKey, NBitcoin.Network.Main);
+            var xPubKey = copayerKey.Neuter().ToString(this.network);
+            var reqPubKey = derivedKey.PrivateKey.PubKey.ToString(this.network);
+            var reqPrivKey = derivedKey.PrivateKey.ToString(this.network);
 
             String sharedEncryptingKey = Utils.PrivateKeyToAESKey(walletPrivKey);
             
@@ -79,6 +86,7 @@ namespace CoPay
 
             var hash = Utils.getCopayerHash(copayerName, xPubKey, reqPubKey);
 
+            var wkey = Key.Parse(walletPrivKey, this.network);
             var copayerSignature = Utils.signMessage(hash, wkey);
 
             var request = new JoinWallet.Request {
@@ -106,12 +114,8 @@ namespace CoPay
                 if (responseMessage.IsSuccessStatusCode)
                 {
                     String responseContent = await responseMessage.Content.ReadAsStringAsync();
-
                     Console.Out.WriteLine(responseContent);
-
-                    // JoinWallet.Response response = JsonConvert.DeserializeObject<JoinWallet.Response>(responseContent);
-
-                    return new JoinWallet.Response();
+                    return JsonConvert.DeserializeObject<JoinWallet.Response>(responseContent);
                 }
                 else
                 {

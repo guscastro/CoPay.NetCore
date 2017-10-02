@@ -22,7 +22,7 @@ namespace CoPay.NetCore
             var task = client.doJoinWallet(
                 walletId,
                 walletPrivateKey,
-                newCopayerKey.Neuter().ToString(NBitcoin.Network.Main),
+                newCopayerKey.ToString(NBitcoin.Network.Main),
                 copayerName
             );
 
@@ -54,9 +54,8 @@ namespace CoPay.NetCore
             Console.Out.WriteLine("Pub");
             Console.Out.WriteLine(k.PrivateKey.PubKey.ToString());
             Console.Out.WriteLine("Pub");
-            var kp = new KeyPath("m/1'/0");
             Console.Out.WriteLine("Derived");
-            var der = k.Derive(kp);
+            var der = k.Derive(Constants.REQUEST_PATH);
             Console.Out.WriteLine(der.ToString(Network.Main));
             Console.Out.WriteLine(der.PrivateKey.ToString(Network.Main));
             Console.Out.WriteLine(der.PrivateKey.PubKey.ToString());
