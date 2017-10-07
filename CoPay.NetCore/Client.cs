@@ -13,7 +13,7 @@ namespace CoPay
     public class Client
     {
         // TODO get from settings or something?
-        private readonly Network network = Network.Main;
+        private readonly Network network = Network.TestNet;
         public const string BWS_INSTANCE_URL = "https://bws.bitpay.com/bws/api";
 
         public Credentials credentials;
@@ -25,20 +25,24 @@ namespace CoPay
             this.baseUrl = baseUrl;
         }
 
-        public void SetCredentials(string xPrivKey, string walletPrivKey, string copayerName)
+        public void SetCredentials(string xPrivKey, Key walletPrivKey, string copayerName)
         {
             this.credentials = Credentials.FromExtendedPrivateKey(xPrivKey, walletPrivKey, copayerName, this.network);
         }
 
-        public async Task<CreateWallet.Response> createWallet(String walletName, String copayerName, Int16 m, Int16 n, opts opts)
-        {
+        public async Task<CreateWallet.Response> createWallet(
+            String walletName,
+            String copayerName,
+            Int16 m,
+            Int16 n
+        ) {
             CreateWallet.Request request = new CreateWallet.Request()
             {
                 m = m,
                 n = n,
                 name = walletName,
-                pubKey = "02fcba7ecf41bc7e1be4ee122d9d22e3333671eb0a3a87b5cdf099d59874e1940f",
-                network = "testnet"
+                pubKey = this.credentials.walletPubKey,
+                network = this.network == Network.Main ? "livenet" : "testnet"
             };
 
             String url = this.baseUrl + "/v2/wallets/";
@@ -47,6 +51,9 @@ namespace CoPay
 
             String json = JsonConvert.SerializeObject(request);
             StringContent requestContent = new StringContent(json, Encoding.UTF8, "application/json");
+
+            Console.WriteLine("Create wallet request");
+            Console.WriteLine(json);
 
             using (HttpResponseMessage responseMessage = await client.PostAsync(url, requestContent))
             {
@@ -58,6 +65,9 @@ namespace CoPay
                 }
                 else
                 {
+                    Console.Out.WriteLine("Error");
+                    Console.Out.WriteLine(responseMessage.StatusCode);
+                    Console.Out.WriteLine(await responseMessage.Content.ReadAsStringAsync());
                     throw new InvalidOperationException();
                 }
             }

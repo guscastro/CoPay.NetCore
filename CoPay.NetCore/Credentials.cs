@@ -23,6 +23,8 @@ namespace CoPay
 
         public Key walletPrivKey { get; set; }
 
+        public string walletPubKey { get; set; }
+
         public string sharedEncryptingKey { get; set; }
 
         public string coin { get; set; }
@@ -33,7 +35,7 @@ namespace CoPay
 
         public static Credentials FromExtendedPrivateKey(
             string xPrivKey,
-            string walletPrivKey,
+            Key walletPrivKey,
             string copayerName,
             Network network,
             string coin = "btc",
@@ -47,8 +49,9 @@ namespace CoPay
             cred.copayerName = copayerName;
             cred.network = network;
 
-            cred.walletPrivKey = Key.Parse(walletPrivKey, network);
-            cred.sharedEncryptingKey = Utils.PrivateKeyToAESKey(walletPrivKey);
+            cred.walletPrivKey = walletPrivKey;
+            cred.walletPubKey = walletPrivKey.PubKey.ToHex();
+            cred.sharedEncryptingKey = Utils.PrivateKeyToAESKey(walletPrivKey.ToString(network));
 
             var extkey = ExtKey.Parse(xPrivKey);
             var coinPath = network == Network.Main ? "0" : "1";
