@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 
 namespace CoPay.NetCore
@@ -7,14 +8,20 @@ namespace CoPay.NetCore
     {
         static void Main(string[] args)
         {
-            Call();
+            // var k = NBitcoin.Key.Parse("KwGv4AGwwjfgxfZnkSM7xB9ZqMAxq2LvhELxBvVCWGxzAa1kuYKV");
+            // Console.WriteLine(k.PubKey.ToString(NBitcoin.Network.TestNet));
+            // Console.WriteLine(k.PubKey.ToString(NBitcoin.Network.Main));
+            CreateTxProposal();
         }
 
-        static void Call() {
-            var walletId = Guid.Parse("24bdfed2-b255-484b-a0f7-3c598af9ea72");
+        static string JoinWallet(string copayerXPrivKey = null) {
+            if (copayerXPrivKey == null) {
+                var newCopayerKey = new NBitcoin.ExtKey();
+                copayerXPrivKey = newCopayerKey.ToString(NBitcoin.Network.Main);
+            }
+            var walletId = Guid.Parse("5f8f1c96-1e8b-481c-9b0b-febbcbdc47c3");
             var walletPrivateKey = "L4vrWtn7zFnboSucZ84XGHzt13HEWMoD48HgXZ49u4JZoA6A9dMh";
             var copayerName = "gus3";
-            var newCopayerKey = new NBitcoin.ExtKey();
             // var pubkey = "0254fea7b08745c15103765a5c299b354ac6fbd3fa6a33c5ee84b6fa0fd108ab4e";
             // var xPubKey = "xpub661MyMwAqRbcGUAtmn55urDkFGxWFsFf6tJphcdLFvYTYyd45qS4TrqC69eswNyE7Zf3tCtQn29vhy3TjAv75GoigSyNVS5tjcnckt2nczf";
             // var xPrivKey = "xprv9s21ZrQH143K3z6RfkY5YiH1hF81rQXojfPDuEDihb1UgBHuYJ7ov4WiEuizAcoJh4gHwhusHJwukqG8zBGwETh7RZPcGGmgbRUiE5t4SWC";
@@ -22,9 +29,42 @@ namespace CoPay.NetCore
             var task = client.doJoinWallet(
                 walletId,
                 walletPrivateKey,
-                newCopayerKey.ToString(NBitcoin.Network.Main),
+                copayerXPrivKey,
                 copayerName
             );
+
+            task.Wait();
+
+            Console.Out.WriteLine(task.Result);
+
+            return task.Result.copayerId;
+        }
+
+        static void CreateTxProposal()
+        {
+            var newCopayerKey = new NBitcoin.ExtKey();
+            var copayerXPrivKey = newCopayerKey.ToString(NBitcoin.Network.Main);
+            Console.WriteLine("copayerXPrivKey");
+            Console.WriteLine(copayerXPrivKey);
+            var copayerId = JoinWallet(copayerXPrivKey);
+            var walletPrivateKey = "L4vrWtn7zFnboSucZ84XGHzt13HEWMoD48HgXZ49u4JZoA6A9dMh";
+            var opts = new TransactionProposal.Options
+            {
+                txProposalId = Guid.NewGuid().ToString(),
+                outputs = new List<TransactionProposal.Options.Output>
+                {
+                    new TransactionProposal.Options.Output
+                    {
+                        toAddress = "TODO",
+                        amount = 10,
+                        message = "Hello Output"
+                    }
+                },
+                message = "Hello Options"
+            };
+
+            var client = new CoPay.Client();
+            var task = client.createTransactionProposal(opts, walletPrivateKey, copayerId, copayerXPrivKey);
 
             task.Wait();
 

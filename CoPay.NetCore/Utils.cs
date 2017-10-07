@@ -46,13 +46,12 @@ namespace CoPay
             return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(key.Sign(hash).ToDER());
         }
 
-        public static string signRequest(String method, String url, object args, string key)
+        public static string signRequest(String method, String url, object args, Key key)
         {
             String json = JsonConvert.SerializeObject(args);
             String message = String.Format("{0}|{1}|{2}", method.ToLower(), url, json);
 
-            NBitcoin.BitcoinSecret s = new BitcoinSecret(key);
-            return s.PrivateKey.SignMessage(message);
+            return Utils.signMessage(message, key);
         }
 
         private static byte[] hashMessage(String test)
@@ -115,9 +114,9 @@ namespace CoPay
         }
 
         public static string PrivateKeyToAESKey(string privKey) {
-            var s = SHA256.Create();
-            var hash = s.ComputeHash(Encoding.ASCII.GetBytes(privKey));
-            return Convert.ToBase64String(hash).Substring(0, 16);
+            var pk = NBitcoin.Key.Parse(privKey);
+            var hash = NBitcoin.Crypto.Hashes.SHA256(pk.ToBytes()).Take(16).ToArray();
+            return NBitcoin.DataEncoders.Encoders.Base64.EncodeData(hash);
         }
     }
 }
