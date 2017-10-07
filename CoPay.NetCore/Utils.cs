@@ -46,13 +46,7 @@ namespace CoPay
             return NBitcoin.DataEncoders.Encoders.Hex.EncodeData(key.Sign(hash).ToDER());
         }
 
-        public static string SignRequest(string method, string url, object args, string key)
-        {
-            var parsedKey = Key.Parse(key);
-            return Utils.signRequest(method, url, args, parsedKey);
-        }
-
-        public static string signRequest(String method, String url, object args, Key key)
+        public static string SignRequest(String method, String url, object args, Key key)
         {
             String json = JsonConvert.SerializeObject(args);
             String message = String.Format("{0}|{1}|{2}", method.ToLower(), url, json);

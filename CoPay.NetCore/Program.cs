@@ -28,7 +28,7 @@ namespace CoPay.NetCore
 
         static Guid CreateWallet()
         {
-            var task = client.createWallet("gus", "gus", 10, 10);
+            var task = client.createWallet("gus", "gus", 1, 1);
             task.Wait();
             return task.Result.walletId;
         }

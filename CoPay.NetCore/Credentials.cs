@@ -17,7 +17,7 @@ namespace CoPay
 
         public string copayerId { get; set; }
 
-        public string requestPrivKey { get; set; }
+        public Key requestPrivKey { get; set; }
 
         public string requestPubKey { get; set; }
 
@@ -61,8 +61,8 @@ namespace CoPay
             cred.xPubKey = derivedCopayerKey.Neuter().ToString(network);
 
             var derivedRequestKey = extkey.Derive(Constants.REQUEST_PATH);
-            cred.requestPrivKey = extkey.PrivateKey.ToString(network);
-            cred.requestPubKey = extkey.PrivateKey.PubKey.ToString(network);
+            cred.requestPrivKey = extkey.PrivateKey;
+            cred.requestPubKey = extkey.PrivateKey.PubKey.ToHex();
 
             return cred;
         }
