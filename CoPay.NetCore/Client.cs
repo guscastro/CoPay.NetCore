@@ -16,6 +16,8 @@ namespace CoPay
         private readonly Network network = Network.Main;
         public const string BWS_INSTANCE_URL = "https://bws.bitpay.com/bws/api";
 
+        public Credentials credentials;
+
         private readonly string baseUrl;
 
         public Client(String baseUrl = BWS_INSTANCE_URL)
@@ -23,16 +25,13 @@ namespace CoPay
             this.baseUrl = baseUrl;
         }
 
-        public async Task<string> createWallet(String walletName, String copayerName, Int16 m, Int16 n, opts opts)
+        public void SetCredentials(string xPrivKey, string walletPrivKey, string copayerName)
         {
-            Cred cred = new Cred()
-            {
-                copayerId = copayerName,
-                network = "testnet",
-                requestPrivKey = "tprv8dxkXXLevuHXR3tLvBkaDLyCnQxsQQVafnDMEQNds8r8tjSPfNTGD5ShtpP8QeTdtCoWGmrMC5gs9j7ap8ATdSsAD2KCv87BGdzPWwmdJt2",
-                xPrivKey = "cNaQCDwmmh4dS9LzCgVtyy1e1xjCJ21GUDHe9K98nzb689JvinGV"
-            };
+            this.credentials = Credentials.FromExtendedPrivateKey(xPrivKey, walletPrivKey, copayerName, this.network);
+        }
 
+        public async Task<CreateWallet.Response> createWallet(String walletName, String copayerName, Int16 m, Int16 n, opts opts)
+        {
             CreateWallet.Request request = new CreateWallet.Request()
             {
                 m = m,
@@ -45,7 +44,6 @@ namespace CoPay
             String url = this.baseUrl + "/v2/wallets/";
 
             HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("x-identity", cred.copayerId);
 
             String json = JsonConvert.SerializeObject(request);
             StringContent requestContent = new StringContent(json, Encoding.UTF8, "application/json");
@@ -56,9 +54,7 @@ namespace CoPay
                 {
                     String responseContent = await responseMessage.Content.ReadAsStringAsync();
 
-                    CreateWallet.Response response = JsonConvert.DeserializeObject<CreateWallet.Response>(responseContent);
-                    String share = buildSecret(response.walletId, cred.xPrivKey, "testnet");
-                    return share;
+                    return JsonConvert.DeserializeObject<CreateWallet.Response>(responseContent);
                 }
                 else
                 {
@@ -67,122 +63,39 @@ namespace CoPay
             }
         }
 
-        public async Task<JoinWallet.Response> doJoinWallet(
-            Guid walletId,
-            String walletPrivKey,
-            String copayerXPrivKey,
-            String copayerName
-        ) {
-            var copayerKey = ExtKey.Parse(copayerXPrivKey);
-            var derivedKey = copayerKey.Derive(Constants.REQUEST_PATH);
+        public async Task<JoinWallet.Response> doJoinWallet(Guid walletId)
+        {
+            var encCopayerName = Utils.encryptMessage(this.credentials.copayerName, this.credentials.sharedEncryptingKey);
 
-            var xPubKey = copayerKey.Neuter().ToString(this.network);
-            var reqPubKey = derivedKey.PrivateKey.PubKey.ToString(this.network);
-            var reqPrivKey = derivedKey.PrivateKey.ToString(this.network);
-
-            Console.WriteLine("join reqpriv");
-            Console.WriteLine(reqPrivKey);
- 
-            var sharedEncryptingKey = Utils.PrivateKeyToAESKey(walletPrivKey);
-            
-            var encCopayerName = Utils.encryptMessage(copayerName, sharedEncryptingKey);
-
-            var hash = Utils.getCopayerHash(copayerName, xPubKey, reqPubKey);
-
-            var wkey = Key.Parse(walletPrivKey, this.network);
-            var copayerSignature = Utils.signMessage(hash, wkey);
+            var hash = Utils.getCopayerHash(encCopayerName, this.credentials.xPubKey, this.credentials.requestPubKey);
+            var copayerSignature = Utils.signMessage(hash, this.credentials.walletPrivKey);
 
             var request = new JoinWallet.Request {
                 walletId = walletId.ToString(),
-                name = copayerName,
-                xPubKey = xPubKey,
-                requestPubKey = reqPubKey,
+                name = encCopayerName,
+                xPubKey = this.credentials.xPubKey,
+                requestPubKey = this.credentials.requestPubKey,
                 copayerSignature = copayerSignature
             };
             
-            var url = this.baseUrl + String.Format("/v2/wallets/{0}/copayers", walletId);
-            var copayerId = Utils.XPubKeyToCopayerId(xPubKey);
+            var url = string.Format("/v2/wallets/{0}/copayers", walletId);
 
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("x-identity", copayerId);
-
-            var json = JsonConvert.SerializeObject(request);
-            Console.Out.WriteLine(json);
-            StringContent requestContent = new StringContent(json, Encoding.UTF8, "application/json");
-
-            using (HttpResponseMessage responseMessage = await client.PostAsync(url, requestContent))
-            {
-                if (responseMessage.IsSuccessStatusCode)
-                {
-                    String responseContent = await responseMessage.Content.ReadAsStringAsync();
-                    Console.Out.WriteLine(responseContent);
-                    return JsonConvert.DeserializeObject<JoinWallet.Response>(responseContent);
-                }
-                else
-                {
-                    Console.Out.WriteLine("Error");
-                    Console.Out.WriteLine(responseMessage.StatusCode);
-                    Console.Out.WriteLine(await responseMessage.Content.ReadAsStringAsync());
-                    throw new InvalidOperationException();
-                }
-            }
+            return await this.DoPostRequest<JoinWallet.Request, JoinWallet.Response>(url, request);
         }
 
         public async Task<TransactionProposal.Response> createTransactionProposal(
-            TransactionProposal.Options opts,
-            string walletPrivKey,
-            string copayerId,
-            string copayerXPrivKey
+            TransactionProposal.Options opts
         ) {
             var args = opts.DeepClone();
-
-            var copayerKey = ExtKey.Parse(copayerXPrivKey);
-            var derivedKey = copayerKey.Derive(Constants.REQUEST_PATH);
-
-            var reqPrivKey = derivedKey.PrivateKey;
-            var sharedEncryptingKey = Utils.PrivateKeyToAESKey(walletPrivKey);
-
-            Console.WriteLine("tx reqpriv");
-            Console.WriteLine(reqPrivKey.ToString(this.network));
-
-            args.message = Utils.encryptMessage(args.message, sharedEncryptingKey);
-            // args.message = "{\"iv\":\"eOaM99CkJ8TRQzGa6M3iNQ==\",\"v\":1,\"iter\":1,\"ks\":128,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"OLvkOOOyKM9ZDTEhRSEFG+qX1Z1Z\"}";
-
+            args.message = Utils.encryptMessage(args.message, this.credentials.sharedEncryptingKey);
             foreach (var output in args.outputs)
             {
-                output.message = output.message ?? Utils.encryptMessage(output.message, sharedEncryptingKey);
+                output.message = output.message ?? Utils.encryptMessage(output.message, this.credentials.sharedEncryptingKey);
             }
-            
-            var relativeUrl = "/v2/txproposals";
-            var url = this.baseUrl + relativeUrl;
-            var reqSignature = Utils.signRequest("post", relativeUrl, args, reqPrivKey);
 
-            var client = new HttpClient();
-            // client.DefaultRequestHeaders.Add("x-identity", copayerId);
-            client.DefaultRequestHeaders.Add("x-identity", "a308c35633a9f116721cc8ecdd6261c806ac823d9ed90f9257834d8813b3f9d0");
-            client.DefaultRequestHeaders.Add("x-signature", reqSignature);
-            // client.DefaultRequestHeaders.Add("x-signature", "30450221009b691ee3a86fcbe1112e07efcf14e4e6fd45780d074f4a9a203f5d7fc14693b3022070556748e95f310bdae56058331a74f76ea342464c60088460093d3c46ad1e1a");
+            var url = "/v2/txproposals";
 
-            var json = JsonConvert.SerializeObject(args);
-            Console.Out.WriteLine(json);
-            var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
-
-            using (var responseMessage = await client.PostAsync(url, requestContent))
-            {
-                if (responseMessage.IsSuccessStatusCode)
-                {
-                    String responseContent = await responseMessage.Content.ReadAsStringAsync();
-                    Console.Out.WriteLine(responseContent);
-                    return JsonConvert.DeserializeObject<TransactionProposal.Response>(responseContent);
-                }
-                else
-                {
-                    Console.Out.WriteLine("Error");
-                    Console.Out.WriteLine(responseMessage.StatusCode);
-                    Console.Out.WriteLine(await responseMessage.Content.ReadAsStringAsync());
-                    throw new InvalidOperationException();
-                }
-            }
+            return await this.DoPostRequest<TransactionProposal.Options, TransactionProposal.Response>(url, args);
         }
 
         private static string buildSecret(Guid walletId, String walletPrivKey, string network)
@@ -192,6 +105,40 @@ namespace CoPay
             string widBase58 = Encoders.Base58.EncodeData(Encoders.Hex.DecodeData(widHx));
 
             return widBase58 + walletPrivKey + "L";
+        }
+
+        private async Task<TResponse> DoPostRequest<TRequest, TResponse>(string url, TRequest request)
+        {
+            var client = new HttpClient();
+            if (this.credentials != null)
+            {
+                client.DefaultRequestHeaders.Add("x-identity", this.credentials.copayerId);
+                var reqSignature = Utils.SignRequest("post", url, request, this.credentials.requestPrivKey);
+                client.DefaultRequestHeaders.Add("x-signature", reqSignature);
+            }
+
+            var fullUrl = this.baseUrl + url;
+
+            var json = JsonConvert.SerializeObject(request);
+            Console.Out.WriteLine(json);
+            var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            using (var responseMessage = await client.PostAsync(fullUrl, requestContent))
+            {
+                if (responseMessage.IsSuccessStatusCode)
+                {
+                    String responseContent = await responseMessage.Content.ReadAsStringAsync();
+                    Console.Out.WriteLine(responseContent);
+                    return JsonConvert.DeserializeObject<TResponse>(responseContent);
+                }
+                else
+                {
+                    Console.Out.WriteLine("Error");
+                    Console.Out.WriteLine(responseMessage.StatusCode);
+                    Console.Out.WriteLine(await responseMessage.Content.ReadAsStringAsync());
+                    throw new InvalidOperationException();
+                }
+            }
         }
     }
 }
