@@ -13,6 +13,7 @@ namespace CoPay.NetCore
             var newCopayerKey = new NBitcoin.ExtKey();
             var walletKey = new NBitcoin.Key();
             var copayerXPrivKey = newCopayerKey.ToString(NBitcoin.Network.TestNet);
+            Console.WriteLine(copayerXPrivKey);
             var copayerName = "gus";
 
             client = new Client();
@@ -57,8 +58,8 @@ namespace CoPay.NetCore
                 {
                     new TransactionProposal.Options.Output
                     {
-                        toAddress = "TODO",
-                        amount = 10,
+                        toAddress = "mqmc1EiKHHoi1dqZQgstfAAj8qajpVwagf",
+                        amount = 100000,
                         message = "Hello Output"
                     }
                 },
