@@ -10,6 +10,8 @@ namespace CoPay.NetCore
 
         static void Main(string[] args)
         {
+            SecretData.FromSecret("9TaJJxTQ6uFYg4kabVag98KyF37KpgttZLrn2DtWj9LuwQi53urzHX4xAGJo6WU5VyoP2KH2XETbtc");
+
             client = new Client();
             client.credentials = Credentials.FromTestCredentials();
             // client.credentials = Credentials.Create("gus", Network.TestNet);
