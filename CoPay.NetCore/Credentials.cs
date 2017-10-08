@@ -37,6 +37,20 @@ namespace CoPay
 
         public string copayerName { get; set; }
 
+        public void PopulateSecretData(SecretData secretData)
+        {
+            this.WalletId = secretData.WalletId;
+            this.AddWalletPrivateKey(secretData.WalletPrivateKey);
+            this.coin = secretData.Coin;
+            this.network = secretData.Network;
+        }
+
+        public void AddWalletPrivateKey(Key walletPrivKey)
+        {
+            this.walletPrivKey = walletPrivKey;
+            this.walletPubKey = walletPrivKey.PubKey.ToHex();
+            this.sharedEncryptingKey = Utils.PrivateKeyToAESKey(walletPrivKey.ToString(network));
+        }
         public static Credentials FromExtendedPrivateKey(
             string xPrivKey,
             Key walletPrivKey,
@@ -53,9 +67,7 @@ namespace CoPay
             cred.copayerName = copayerName;
             cred.network = network;
 
-            cred.walletPrivKey = walletPrivKey;
-            cred.walletPubKey = walletPrivKey.PubKey.ToHex();
-            cred.sharedEncryptingKey = Utils.PrivateKeyToAESKey(walletPrivKey.ToString(network));
+            cred.AddWalletPrivateKey(walletPrivKey);
 
             var extkey = ExtKey.Parse(xPrivKey);
             var coinPath = network == Network.Main ? "0" : "1";
@@ -95,17 +107,6 @@ namespace CoPay
             cred.copayerId = "13d3de948a85c8ae3d0086b2964eaaa032ab210329e2862583b00dc1ddacdefd";
 
             return cred;
-//             address
-// myQBSsWXjWHyhjFTcFg27aA7AvmkTTe4bs
-
-// walletid
-// b049a945-86ca-4bd2-becd-57744f73c3d1
-
-// copayerid
-// 98608d826478d78c794f9be5d233b56d61a16f0289aa6420cdaedfb0362cfceb
-
-// xprivkey
-// tprv8ZgxMBicQKsPfMAYKkvGfKL8QbgoxxmrpqgEKzU7VCduEsfbYVYirKaPJXfycNTcaLXeVJxpFQR961FFuR4PYWZFAxvRLeYx2ncWS5Tgp5Y
         }
     }
 }
