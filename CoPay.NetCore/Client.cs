@@ -108,6 +108,35 @@ namespace CoPay
             return await this.DoPostRequest<TransactionProposal.Options, TransactionProposal.Response>(url, args);
         }
 
+        public async Task<dynamic> RequestNewAddress()
+        {
+            var url = "/v1/addresses";
+            return await this.DoPostRequest<dynamic, dynamic>(url);
+        }
+
+        public async Task<dynamic> GetWalletAddresses()
+        {
+            var url = "/v1/addresses";
+            var client = BuildClient("get", url);
+            using (var responseMessage = await client.GetAsync(this.baseUrl + url))
+            {
+                if (responseMessage.IsSuccessStatusCode)
+                {
+                    String responseContent = await responseMessage.Content.ReadAsStringAsync();
+                    Console.Out.WriteLine("wallet addresses");
+                    Console.Out.WriteLine(responseContent);
+                    return JsonConvert.DeserializeObject<dynamic>(responseContent);
+                }
+                else
+                {
+                    Console.Out.WriteLine("Error");
+                    Console.Out.WriteLine(responseMessage.StatusCode);
+                    Console.Out.WriteLine(await responseMessage.Content.ReadAsStringAsync());
+                    throw new InvalidOperationException();
+                }
+            }
+        }
+
         private static string buildSecret(Guid walletId, String walletPrivKey, string network)
         {
             string widHx = walletId.ToString("N");
@@ -117,19 +146,17 @@ namespace CoPay
             return widBase58 + walletPrivKey + "L";
         }
 
-        private async Task<TResponse> DoPostRequest<TRequest, TResponse>(string url, TRequest request)
+        private async Task<TResponse> DoPostRequest<TRequest, TResponse>(string url, TRequest request = default(TRequest))
         {
-            var client = new HttpClient();
-            if (this.credentials != null)
-            {
-                client.DefaultRequestHeaders.Add("x-identity", this.credentials.copayerId);
-                var reqSignature = Utils.SignRequest("post", url, request, this.credentials.requestPrivKey);
-                client.DefaultRequestHeaders.Add("x-signature", reqSignature);
-            }
+            var client = BuildClient("post", url, request);
 
             var fullUrl = this.baseUrl + url;
 
-            var json = JsonConvert.SerializeObject(request);
+            string json = string.Empty;
+            if (request != null)
+            {
+                json = JsonConvert.SerializeObject(request);
+            }
             Console.Out.WriteLine(json);
             var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
             
@@ -145,10 +172,24 @@ namespace CoPay
                 {
                     Console.Out.WriteLine("Error");
                     Console.Out.WriteLine(responseMessage.StatusCode);
-                    Console.Out.WriteLine(await responseMessage.Content.ReadAsStringAsync());
-                    throw new InvalidOperationException();
+                    var errorMessage = await responseMessage.Content.ReadAsStringAsync();
+                    Console.Out.WriteLine(errorMessage);
+                    throw new InvalidOperationException(errorMessage);
                 }
             }
+        }
+
+        private HttpClient BuildClient(string method, string url, object request = null)
+        {
+            var client = new HttpClient();
+            if (this.credentials != null)
+            {
+                client.DefaultRequestHeaders.Add("x-identity", this.credentials.copayerId);
+                var reqSignature = Utils.SignRequest(method, url, request, this.credentials.requestPrivKey);
+                client.DefaultRequestHeaders.Add("x-signature", reqSignature);
+            }
+
+            return client;
         }
     }
 }

@@ -48,7 +48,7 @@ namespace CoPay
 
         public static string SignRequest(String method, String url, object args, Key key)
         {
-            String json = JsonConvert.SerializeObject(args);
+            String json = args != null ? JsonConvert.SerializeObject(args) : "{}";
             String message = String.Format("{0}|{1}|{2}", method.ToLower(), url, json);
 
             return Utils.signMessage(message, key);

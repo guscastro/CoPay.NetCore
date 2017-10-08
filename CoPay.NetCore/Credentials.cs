@@ -21,6 +21,10 @@ namespace CoPay
 
         public string requestPubKey { get; set; }
 
+        public Guid WalletId { get; set; }
+
+        public string WalletAddress { get; set; }
+
         public Key walletPrivKey { get; set; }
 
         public string walletPubKey { get; set; }
@@ -64,7 +68,44 @@ namespace CoPay
             cred.requestPrivKey = extkey.PrivateKey;
             cred.requestPubKey = extkey.PrivateKey.PubKey.ToHex();
 
+            cred.copayerId = Utils.XPubKeyToCopayerId(cred.xPubKey);
+
             return cred;
+        }
+
+        public static Credentials Create(string copayerName, Network network)
+        {
+            var newCopayerKey = new NBitcoin.ExtKey();
+            var walletKey = new NBitcoin.Key();
+            var copayerXPrivKey = newCopayerKey.ToString(network);
+            return Credentials.FromExtendedPrivateKey(copayerXPrivKey, walletKey, copayerName, network);
+        }
+
+        public static Credentials FromTestCredentials()
+        {
+            var cred = Credentials.FromExtendedPrivateKey(
+                "tprv8ZgxMBicQKsPcxukSA32PC1SSEzng3oGsud3VRrougq7e5UEp6yCF4RXMLFx7HMhTDKBacpPS2KQeQJkeQWkSi9Eu12oN12eV1cHS1vTPKb",
+                Key.Parse("cViJGiPK63CNYQbGhZdfphovh1iz3hjRJgoeHCk6YKtemaVhnJBp"),
+                "gus",
+                Network.TestNet
+            );
+
+            cred.WalletId = Guid.Parse("3a015f4f-1416-484b-85c4-9c90490e7be3");
+            cred.WalletAddress = "mu9kXtgtXUFPk8kBtqQn8qVD3tFGLQcbZc";
+            cred.copayerId = "13d3de948a85c8ae3d0086b2964eaaa032ab210329e2862583b00dc1ddacdefd";
+
+            return cred;
+//             address
+// myQBSsWXjWHyhjFTcFg27aA7AvmkTTe4bs
+
+// walletid
+// b049a945-86ca-4bd2-becd-57744f73c3d1
+
+// copayerid
+// 98608d826478d78c794f9be5d233b56d61a16f0289aa6420cdaedfb0362cfceb
+
+// xprivkey
+// tprv8ZgxMBicQKsPfMAYKkvGfKL8QbgoxxmrpqgEKzU7VCduEsfbYVYirKaPJXfycNTcaLXeVJxpFQR961FFuR4PYWZFAxvRLeYx2ncWS5Tgp5Y
         }
     }
 }

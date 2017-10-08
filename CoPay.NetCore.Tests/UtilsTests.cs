@@ -49,7 +49,7 @@ namespace CoPay.NetCore.Tests
             };
             var xkey = NBitcoin.ExtKey.Parse("xprv9s21ZrQH143K4QfiqFa9SfBhBhcCUmBjNZ3JbovDKiz7jADZhok1rXLVozgoicjX9WPytAco48GNTJeDUtu5eiU8DV2kznJ1KBv7xUc1Jda");
             var der = xkey.Derive(CoPay.Constants.REQUEST_PATH);
-            var actual = Utils.signRequest("post", url, args, der.PrivateKey);
+            var actual = Utils.SignRequest("post", url, args, der.PrivateKey);
 
             Assert.Equal(expected, actual);
         }
