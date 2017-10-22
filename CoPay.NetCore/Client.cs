@@ -137,6 +137,15 @@ namespace CoPay
             }
         }
 
+        public async Task<NotificationsSubscribe.Response> SubscribeToNotifications(string deviceType, string token)
+        {
+            var request = new NotificationsSubscribe.Request {
+                type = deviceType,
+                token = token
+            };
+            return await this.DoPostRequest<NotificationsSubscribe.Request, NotificationsSubscribe.Response>("/v1/pushnotifications/subscriptions/", request);
+        }
+
         private static string buildSecret(Guid walletId, String walletPrivKey, string network)
         {
             string widHx = walletId.ToString("N");

@@ -21,10 +21,11 @@ namespace CoPay.NetCore
             Console.WriteLine(client.credentials.walletPrivKey.ToString(Network.TestNet));
 
             // var walletId = CreateWallet();
-            JoinWallet(s.WalletId);
+            // JoinWallet(s.WalletId);
             // RequestNewAddress();
             // GetWalletAddresses();
             // CreateTxProposal();
+            SubscribeToNotifications("TODO get from app");
         }
 
         static Guid CreateWallet()
@@ -78,6 +79,13 @@ namespace CoPay.NetCore
 
             task.Wait();
 
+            Console.Out.WriteLine(task.Result);
+        }
+
+        static void SubscribeToNotifications(string token, string deviceType = "ios")
+        {
+            var task = client.SubscribeToNotifications(deviceType, token);
+            task.Wait();
             Console.Out.WriteLine(task.Result);
         }
 
