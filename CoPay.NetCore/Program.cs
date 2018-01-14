@@ -6,36 +6,36 @@ namespace CoPay.NetCore
 {
     class Program
     {
-        static Client client;
-
         static void Main(string[] args)
         {
             var s = SecretData.FromSecret("9TaJJxTQ6uFYg4kabVag98KyF37KpgttZLrn2DtWj9LuwQi53urzHX4xAGJo6WU5VyoP2KH2XETbtc");
 
-            client = new Client();
+            var signingClient = new Client();
             // client.credentials = Credentials.FromTestCredentials();
-            client.credentials = Credentials.Create("gus", Network.TestNet);
-            client.credentials.PopulateSecretData(s);
+            signingClient.credentials = Credentials.Create("gus", Network.TestNet);
+            signingClient.credentials.PopulateSecretData(s);
 
-            Console.WriteLine("credentials");
-            Console.WriteLine(client.credentials.walletPrivKey.ToString(Network.TestNet));
+            var copayerClient = new Client();
+            copayerClient.credentials = Credentials.Create("gus2", Network.TestNet);
+            copayerClient.credentials.PopulateSecretData(s);
 
-            var walletId = CreateWallet();
-            JoinWallet(walletId);
-            RequestNewAddress();
+            var walletId = CreateWallet(signingClient);
+            JoinWallet(signingClient, walletId);
+            JoinWallet(copayerClient, walletId);
+            RequestNewAddress(signingClient);
             // GetWalletAddresses();
             // CreateTxProposal();
-            SubscribeToNotifications("TODO get from app");
+            SubscribeToNotifications(signingClient, "TODO get from app");
         }
 
-        static Guid CreateWallet()
+        static Guid CreateWallet(Client client)
         {
-            var task = client.createWallet("gus", "gus", 1, 1);
+            var task = client.createWallet("gus", "gus", 1, 2);
             task.Wait();
             return task.Result.walletId;
         }
 
-        static void JoinWallet(Guid walletId)
+        static void JoinWallet(Client client, Guid walletId)
         {
             var task = client.doJoinWallet(walletId);
 
@@ -46,19 +46,19 @@ namespace CoPay.NetCore
             client.credentials.copayerId = task.Result.copayerId;
         }
 
-        static void RequestNewAddress()
+        static void RequestNewAddress(Client client)
         {
             var task = client.RequestNewAddress();
             task.Wait();
         }
 
-        static void GetWalletAddresses()
+        static void GetWalletAddresses(Client client)
         {
             var task = client.GetWalletAddresses();
             task.Wait();
         }
 
-        static void CreateTxProposal()
+        static void CreateTxProposal(Client client)
         {
             var opts = new TransactionProposal.Options
             {
@@ -82,7 +82,7 @@ namespace CoPay.NetCore
             Console.Out.WriteLine(task.Result);
         }
 
-        static void SubscribeToNotifications(string token, string deviceType = "ios")
+        static void SubscribeToNotifications(Client client, string token, string deviceType = "ios")
         {
             var task = client.SubscribeToNotifications(deviceType, token);
             task.Wait();
