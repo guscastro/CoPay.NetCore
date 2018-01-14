@@ -20,9 +20,9 @@ namespace CoPay.NetCore
             Console.WriteLine("credentials");
             Console.WriteLine(client.credentials.walletPrivKey.ToString(Network.TestNet));
 
-            // var walletId = CreateWallet();
-            // JoinWallet(s.WalletId);
-            // RequestNewAddress();
+            var walletId = CreateWallet();
+            JoinWallet(walletId);
+            RequestNewAddress();
             // GetWalletAddresses();
             // CreateTxProposal();
             SubscribeToNotifications("TODO get from app");
